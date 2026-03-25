@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Automatika — Agendamiento automático por WhatsApp</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue:     #1B6FE8;
+    --blue-dk:  #1458C0;
+    --blue-lt:  #EEF4FE;
+    --blue-mid: #DDEAFD;
+    --dark:     #0D1B2A;
+    --gray:     #64748B;
+    --gray-lt:  #F1F5F9;
+    --white:    #FFFFFF;
+    --border:   #E2EAF4;
+    --green-wa: #25D366;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--white);
+    color: var(--dark);
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 6vw;
+    height: 64px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 1.2rem;
+    color: var(--blue);
+    letter-spacing: -0.02em;
+  }
+  .nav-logo span { color: var(--dark); }
+  .nav-cta {
+    background: var(--blue); color: var(--white);
+    padding: 10px 22px; border-radius: 100px;
+    font-size: 0.875rem; font-weight: 500;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .nav-cta:hover { background: var(--blue-dk); transform: translateY(-1px); }
+
+  /* HERO */
+  .hero {
+    padding: 140px 6vw 100px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--blue-lt); color: var(--blue);
+    padding: 6px 14px; border-radius: 100px;
+    font-size: 0.8rem; font-weight: 500;
+    margin-bottom: 20px;
+    border: 1px solid var(--blue-mid);
+  }
+  .hero-badge::before {
+    content: ''; width: 8px; height: 8px;
+    background: var(--green-wa); border-radius: 50%;
+  }
+  h1 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    color: var(--dark);
+    margin-bottom: 20px;
+  }
+  h1 em {
+    font-style: normal;
+    color: var(--blue);
+  }
+  .hero-sub {
+    font-size: 1.05rem;
+    color: var(--gray);
+    line-height: 1.7;
+    margin-bottom: 36px;
+    max-width: 480px;
+  }
+  .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--blue); color: var(--white);
+    padding: 14px 28px; border-radius: 100px;
+    font-size: 0.95rem; font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(27,111,232,0.3);
+  }
+  .btn-primary:hover { background: var(--blue-dk); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(27,111,232,0.35); }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: transparent; color: var(--dark);
+    padding: 14px 28px; border-radius: 100px;
+    font-size: 0.95rem; font-weight: 500;
+    text-decoration: none;
+    border: 1.5px solid var(--border);
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* CHAT MOCKUP */
+  .chat-mockup {
+    background: #ECE5DD;
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 20px 60px rgba(13,27,42,0.12);
+    position: relative;
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .chat-header {
+    display: flex; align-items: center; gap: 10px;
+    background: #075E54; border-radius: 12px 12px 0 0;
+    padding: 10px 14px; margin: -20px -20px 0;
+    border-radius: 20px 20px 0 0;
+  }
+  .chat-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--green-wa);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 700; color: white;
+    font-family: 'Sora', sans-serif;
+  }
+  .chat-name { color: white; font-weight: 500; font-size: 0.9rem; }
+  .chat-status { color: #B2DFDB; font-size: 0.75rem; }
+  .msg { max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 0.85rem; line-height: 1.5; }
+  .msg-bot { background: white; align-self: flex-start; border-radius: 2px 12px 12px 12px; color: var(--dark); }
+  .msg-user { background: #DCF8C6; align-self: flex-end; border-radius: 12px 2px 12px 12px; color: var(--dark); }
+  .msg-time { font-size: 0.65rem; color: #999; text-align: right; margin-top: 2px; }
+
+  /* HOW IT WORKS */
+  .section { padding: 90px 6vw; max-width: 1200px; margin: 0 auto; }
+  .section-label {
+    font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em;
+    color: var(--blue); text-transform: uppercase; margin-bottom: 12px;
+  }
+  h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 700; letter-spacing: -0.02em;
+    color: var(--dark); margin-bottom: 16px;
+  }
+  .section-sub { color: var(--gray); font-size: 1rem; line-height: 1.7; max-width: 520px; margin-bottom: 56px; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  .step {
+    padding: 28px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .step::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--blue);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.3s;
+  }
+  .step:hover { border-color: var(--blue-mid); box-shadow: 0 8px 32px rgba(27,111,232,0.1); transform: translateY(-3px); }
+  .step:hover::before { transform: scaleX(1); }
+  .step-num {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--blue-lt); color: var(--blue);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1rem;
+    margin-bottom: 16px;
+  }
+  .step h3 { font-family: 'Sora', sans-serif; font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+  .step p { font-size: 0.875rem; color: var(--gray); line-height: 1.6; }
+
+  /* PRICING */
+  .pricing-bg { background: var(--gray-lt); }
+  .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .plan {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px 28px;
+    transition: all 0.25s;
+  }
+  .plan:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(13,27,42,0.08); }
+  .plan.featured {
+    border-color: var(--blue);
+    box-shadow: 0 8px 32px rgba(27,111,232,0.15);
+    position: relative;
+  }
+  .plan-badge {
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    background: var(--blue); color: white;
+    font-size: 0.75rem; font-weight: 600;
+    padding: 4px 16px; border-radius: 100px;
+    white-space: nowrap;
+  }
+  .plan-name { font-size: 0.8rem; font-weight: 600; color: var(--gray); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+  .plan-price { font-family: 'Sora', sans-serif; font-size: 2.4rem; font-weight: 700; color: var(--dark); letter-spacing: -0.03em; }
+  .plan-price span { font-size: 1rem; font-weight: 400; color: var(--gray); }
+  .plan-retainer { font-size: 0.9rem; color: var(--blue); font-weight: 500; margin: 4px 0 20px; }
+  .plan-divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  .plan-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+  .plan-features li { font-size: 0.875rem; color: var(--gray); display: flex; align-items: center; gap: 8px; }
+  .plan-features li::before { content: '✓'; color: var(--blue); font-weight: 700; flex-shrink: 0; }
+  .plan-btn {
+    display: block; text-align: center;
+    padding: 12px; border-radius: 100px;
+    font-size: 0.9rem; font-weight: 500;
+    text-decoration: none; transition: all 0.2s;
+  }
+  .plan-btn-outline { border: 1.5px solid var(--border); color: var(--dark); }
+  .plan-btn-outline:hover { border-color: var(--blue); color: var(--blue); }
+  .plan-btn-filled { background: var(--blue); color: white; box-shadow: 0 4px 16px rgba(27,111,232,0.3); }
+  .plan-btn-filled:hover { background: var(--blue-dk); transform: translateY(-1px); }
+
+  /* CTA FINAL */
+  .cta-section {
+    background: var(--dark);
+    padding: 90px 6vw;
+    text-align: center;
+  }
+  .cta-section h2 { color: white; margin-bottom: 16px; }
+  .cta-section p { color: #94A3B8; font-size: 1rem; margin-bottom: 36px; }
+  .btn-wa {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--green-wa); color: white;
+    padding: 16px 36px; border-radius: 100px;
+    font-size: 1rem; font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+    box-shadow: 0 4px 24px rgba(37,211,102,0.4);
+  }
+  .btn-wa:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(37,211,102,0.5); }
+  .btn-wa svg { width: 22px; height: 22px; fill: white; }
+
+  /* FOOTER */
+  footer {
+    padding: 28px 6vw;
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid var(--border);
+    font-size: 0.8rem; color: var(--gray);
+  }
+  .footer-logo { font-family: 'Sora', sans-serif; font-weight: 700; color: var(--blue); }
+
+  /* ANIMATIONS */
+  .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s, transform 0.6s; }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 768px) {
+    .hero { grid-template-columns: 1fr; padding: 110px 5vw 60px; gap: 40px; }
+    .steps { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    footer { flex-direction: column; gap: 8px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Auto<span>matika</span></div>
+  <a href="https://wa.me/593963114341?text=Hola,%20quiero%20información%20sobre%20el%20bot%20de%20agendamiento" class="nav-cta" target="_blank">Hablar con nosotros</a>
+</nav>
+
+<!-- HERO -->
+<section>
+  <div class="hero">
+    <div>
+      <div class="hero-badge">Bot activo 24/7</div>
+      <h1>Agenda citas por WhatsApp <em>de forma automática</em></h1>
+      <p class="hero-sub">Tu negocio recibe y confirma citas automáticamente mientras tú te enfocas en lo que importa. Sin personal extra, sin errores, sin esperas.</p>
+      <div class="hero-btns">
+        <a href="https://wa.me/593963114341?text=Hola,%20quiero%20probar%20el%20bot%20de%20agendamiento" class="btn-primary" target="_blank">
+          <svg width="18" height="18" fill="white" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.859L.057 23.5l5.797-1.52A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.808 9.808 0 01-5.001-1.368l-.36-.214-3.44.902.918-3.352-.235-.374A9.818 9.818 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
+          Probar el bot gratis
+        </a>
+        <a href="#precios" class="btn-secondary">Ver precios →</a>
+      </div>
+    </div>
+
+    <!-- CHAT MOCKUP -->
+    <div class="chat-mockup">
+      <div class="chat-header">
+        <div class="chat-avatar">A</div>
+        <div>
+          <div class="chat-name">Automatika Bot</div>
+          <div class="chat-status">en línea</div>
+        </div>
+      </div>
+      <div class="msg msg-user">Hola, quiero agendar una cita</div>
+      <div class="msg-time" style="align-self:flex-end">16:02</div>
+      <div class="msg msg-bot">Hola! Soy el asistente de agendamiento 🤖<br><br>¿Cuál es tu nombre completo?</div>
+      <div class="msg msg-user">María García</div>
+      <div class="msg msg-bot">Perfecto, María! 👋<br><br>¿Qué fecha prefieres?<br>Escríbela así: <b>2026-04-10</b></div>
+      <div class="msg msg-user">2026-04-10</div>
+      <div class="msg msg-bot">¿A qué hora? (08:00 – 18:00)</div>
+      <div class="msg msg-user">10:00</div>
+      <div class="msg msg-bot">✅ <b>Cita confirmada!</b><br><br>👤 María García<br>📅 10 de abril, 2026<br>🕐 10:00 AM<br><br>¡Te esperamos!</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section">
+  <p class="section-label">Cómo funciona</p>
+  <h2>Simple para tu cliente,<br>poderoso para tu negocio</h2>
+  <p class="section-sub">El cliente agenda solo, tú recibes la cita directo en tu calendario. Sin intermediarios, sin errores.</p>
+  <div class="steps">
+    <div class="step fade-in">
+      <div class="step-num">1</div>
+      <h3>Cliente escribe "Hola"</h3>
+      <p>El bot responde al instante, 24 horas al día, 7 días a la semana. Sin tiempos de espera.</p>
+    </div>
+    <div class="step fade-in" style="transition-delay: 0.1s">
+      <div class="step-num">2</div>
+      <h3>Bot recopila los datos</h3>
+      <p>Nombre, fecha y hora en una conversación natural. Simple para cualquier persona.</p>
+    </div>
+    <div class="step fade-in" style="transition-delay: 0.2s">
+      <div class="step-num">3</div>
+      <h3>Cita guardada en tu calendario</h3>
+      <p>Queda registrada automáticamente en Google Calendar. Tú la ves al instante.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<div class="pricing-bg">
+  <section class="section" id="precios">
+    <p class="section-label">Precios</p>
+    <h2>Transparente y sin sorpresas</h2>
+    <p class="section-sub">Pago único de implementación y una cuota mensual fija. Sin contratos largos.</p>
+    <div class="pricing-grid">
+
+      <div class="plan fade-in">
+        <div class="plan-name">Básico</div>
+        <div class="plan-price">$150 <span>único</span></div>
+        <div class="plan-retainer">+ $75 / mes</div>
+        <hr class="plan-divider">
+        <ul class="plan-features">
+          <li>Bot de agendamiento por WhatsApp</li>
+          <li>Google Calendar integrado</li>
+          <li>Soporte por WhatsApp</li>
+          <li>1 número de WhatsApp</li>
+        </ul>
+        <a href="https://wa.me/593963114341?text=Hola,%20me%20interesa%20el%20plan%20Básico%20de%20Automatika" class="plan-btn plan-btn-outline" target="_blank">Comenzar →</a>
+      </div>
+
+      <div class="plan featured fade-in" style="transition-delay:0.1s">
+        <div class="plan-badge">Más popular</div>
+        <div class="plan-name">Profesional</div>
+        <div class="plan-price">$249 <span>único</span></div>
+        <div class="plan-retainer">+ $99 / mes</div>
+        <hr class="plan-divider">
+        <ul class="plan-features">
+          <li>Todo lo del plan Básico</li>
+          <li>Recordatorios automáticos de cita</li>
+          <li>Cancelación por WhatsApp</li>
+          <li>Personalización del bot</li>
+          <li>Soporte prioritario</li>
+        </ul>
+        <a href="https://wa.me/593963114341?text=Hola,%20me%20interesa%20el%20plan%20Profesional%20de%20Automatika" class="plan-btn plan-btn-filled" target="_blank">Comenzar →</a>
+      </div>
+
+      <div class="plan fade-in" style="transition-delay:0.2s">
+        <div class="plan-name">Premium</div>
+        <div class="plan-price">$399 <span>único</span></div>
+        <div class="plan-retainer">+ $149 / mes</div>
+        <hr class="plan-divider">
+        <ul class="plan-features">
+          <li>Todo lo del plan Profesional</li>
+          <li>Múltiples doctores o servicios</li>
+          <li>Reportes mensuales</li>
+          <li>Integración con tu sistema</li>
+          <li>Onboarding dedicado</li>
+        </ul>
+        <a href="https://wa.me/593963114341?text=Hola,%20me%20interesa%20el%20plan%20Premium%20de%20Automatika" class="plan-btn plan-btn-outline" target="_blank">Comenzar →</a>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<!-- CTA FINAL -->
+<div class="cta-section">
+  <h2>¿Listo para automatizar tu agenda?</h2>
+  <p>Escríbenos y en menos de 48 horas tienes el bot funcionando en tu negocio.</p>
+  <a href="https://wa.me/593963114341?text=Hola,%20quiero%20información%20sobre%20Automatika" class="btn-wa" target="_blank">
+    <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.859L.057 23.5l5.797-1.52A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.808 9.808 0 01-5.001-1.368l-.36-.214-3.44.902.918-3.352-.235-.374A9.818 9.818 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
+    Escribir por WhatsApp
+  </a>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Automatika</div>
+  <div>© 2026 Automatika. Ecuador.</div>
+</footer>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
+
